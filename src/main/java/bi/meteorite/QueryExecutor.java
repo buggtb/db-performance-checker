@@ -56,8 +56,17 @@ public class QueryExecutor implements Callable{
       if (stmt != null) {
         rs = stmt.executeQuery(query);
       }
-    } catch (SQLException e) {
-      e.printStackTrace();
+    } finally {
+      if (rs != null) {
+        try {
+          rs.close();
+        } catch (SQLException e) { /* ignored */}
+      }
+      if (stmt != null) {
+        try {
+          stmt.close();
+        } catch (SQLException e) { /* ignored */}
+      }
     }
 
     long stopTime = System.currentTimeMillis();
