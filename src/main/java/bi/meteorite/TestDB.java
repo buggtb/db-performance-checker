@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Timestamp;
@@ -15,12 +14,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
-import static java.sql.DriverManager.getConnection;
 
 /**
  * Created by bugg on 22/03/16.
@@ -33,7 +29,7 @@ public class TestDB {
   public TestDB(String configpath, String querypath, String concurrency, String validateresult) {
 
     ArrayList<Future<Map<String, Object>>> list;
-    ExecutorService service = null;
+    ExecutorService service;
 
 
     try {
@@ -47,16 +43,6 @@ public class TestDB {
 
     Properties configprops = loadConfig(configpath);
 
-    Connection sourceconnection =
-        connectDB(configprops.getProperty("sourcedb.url"), configprops.getProperty("sourcedb.username"),
-            configprops.getProperty("sourcedb.password"),
-            configprops.getProperty("sourcedb.class"));
-
-    Connection targetconnection =
-        connectDB(configprops.getProperty("targetdb.url"), configprops.getProperty("targetdb.username"),
-            configprops.getProperty("targetdb.password"),
-            configprops.getProperty("targetdb.class"));
-
     for(int i=0;i<100;i++) {
       list=new ArrayList();
       Properties[] files = loadFiles(concurrency, querypath, i);
@@ -67,12 +53,12 @@ public class TestDB {
       }
       for(Properties p: files) {
         if (files.length > 0) {
-          Future<Map<String, Object>> future = service.submit(new QueryExecutor("Source Database", sourceconnection,
-              p.getProperty("sourcedb.query")));
+          Future<Map<String, Object>> future = service.submit(new QueryExecutor("Source Database", configprops,
+              p.getProperty("sourcedb.query"), "sourcedb"));
           list.add(future);
 
-          future = service.submit(new QueryExecutor("Target Database", targetconnection,
-              p.getProperty("targetdb.query")));
+          future = service.submit(new QueryExecutor("Target Database", configprops,
+              p.getProperty("targetdb.query"), "targetdb"));
           list.add(future);
         } else {
           break;
@@ -140,28 +126,6 @@ public class TestDB {
       e.printStackTrace();
     }
     return prop;
-  }
-
-  private Connection connectDB(String url, String username, String password, String classname){
-    try {
-      Class.forName(classname);
-
-      return getConnection(url, username, password);
-      //Statement stmt = conn.createStatement();
-      //ResultSet rs;
-
-      //rs = stmt.executeQuery("SELECT Lname FROM Customers WHERE Snum = 2001");
-      //while ( rs.next() ) {
-       // String lastName = rs.getString("Lname");
-      //  System.out.println(lastName);
-      //}
-      //conn.close();
-    } catch (Exception e) {
-      System.err.println("Got an exception! ");
-      System.err.println(e.getMessage());
-    }
-
-    return null;
   }
 
   public File[] finder(String dirName){
