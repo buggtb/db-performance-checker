@@ -55,7 +55,8 @@ public class QueryExecutor implements Callable{
     hashMap.put("name", name);
     DecimalFormat df = new DecimalFormat("#.####");
     df.setRoundingMode(RoundingMode.CEILING);
-    hashMap.put("output", "Database: "+name+" took "+ String.valueOf(df.format(seconds))+" executing query: "+query);
+    hashMap.put("output", "Database: "+name+" took "+ String.valueOf(df.format(seconds))+" seconds executing query: "
+                          + ""+query);
     hashMap.put("resultset", rs);
     return hashMap;
 
